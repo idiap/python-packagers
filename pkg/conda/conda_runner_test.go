@@ -153,9 +153,9 @@ func testCondaRunner(t *testing.T, context spec.G, it spec.S) {
 					"--offline",
 				}
 
-				Expect(executions[0].Args).To(Equal(args))
-				Expect(executions[0].Env).NotTo(ContainElement(fmt.Sprintf("CONDA_PKGS_DIRS=%s", condaCachePath)))
-				Expect(executable.ExecuteCall.CallCount).To(Equal(1))
+				Expect(executions[1].Args).To(Equal(args))
+				Expect(executions[1].Env).NotTo(ContainElement(fmt.Sprintf("CONDA_PKGS_DIRS=%s", condaCachePath)))
+				Expect(executable.ExecuteCall.CallCount).To(Equal(2))
 				Expect(buffer.String()).To(ContainLines(
 					fmt.Sprintf("    Running 'conda %s'", strings.Join(args, " ")),
 					"      stdout output",
@@ -181,10 +181,7 @@ func testCondaRunner(t *testing.T, context spec.G, it spec.S) {
 						Expect(err).To(MatchError("failed to run conda command: some conda failure"))
 
 						args := []string{
-							"create",
-							"--file", filepath.Join(workingDir, "package-list.txt"),
-							"--prefix", condaLayerPath,
-							"--yes",
+							"search",
 							"--quiet",
 							"--channel", vendorPath,
 							"--override-channels",

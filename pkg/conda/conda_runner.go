@@ -74,7 +74,7 @@ func (c CondaRunner) ShouldRun(workingDir string, metadata map[string]interface{
 }
 
 func (c CondaRunner) loadChannelContent(args []string) error {
-	searchArgs := append([]string{"search"}, args...)
+	searchArgs := append([]string{"search", "--quiet"}, args...)
 	c.logger.Subprocess("Running 'conda %s'", strings.Join(searchArgs, " "))
 
 	err := c.executable.Execute(pexec.Execution{
