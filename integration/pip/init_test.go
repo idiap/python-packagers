@@ -8,12 +8,13 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/paketo-buildpacks/occam"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
+
+	"github.com/paketo-buildpacks/python-packagers/integration"
 )
 
 var buildpackInfo struct {
@@ -76,7 +77,7 @@ func TestIntegration(t *testing.T) {
 	root, err := filepath.Abs("./../..")
 	Expect(err).ToNot(HaveOccurred())
 
-	buildpackStore := occam.NewBuildpackStore()
+	buildpackStore := integration_helpers.NewBuildpackStore("pip")
 
 	settings.Buildpacks.PipInstall.Online, err = buildpackStore.Get.
 		WithVersion("1.2.3").

@@ -8,12 +8,13 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/paketo-buildpacks/occam"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
+
+	"github.com/paketo-buildpacks/python-packagers/integration"
 )
 
 var (
@@ -59,7 +60,7 @@ func TestIntegration(t *testing.T) {
 	Expect(json.NewDecoder(file).Decode(&config)).To(Succeed())
 	Expect(file.Close()).To(Succeed())
 
-	buildpackStore := occam.NewBuildpackStore()
+	buildpackStore := integration_helpers.NewBuildpackStore("conda")
 
 	buildpack, err = buildpackStore.Get.
 		WithVersion("1.2.3").
