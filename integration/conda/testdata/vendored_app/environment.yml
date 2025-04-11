@@ -1,0 +1,4 @@
+name: vendored_app
+dependencies:
+- python=3.10
+- flask=3

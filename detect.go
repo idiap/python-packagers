@@ -4,6 +4,7 @@ import (
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 
+	conda "github.com/paketo-buildpacks/python-packagers/pkg/conda"
 	pipinstall "github.com/paketo-buildpacks/python-packagers/pkg/pip"
 )
 
@@ -18,11 +19,23 @@ func Detect(logger scribe.Emitter) packit.DetectFunc {
 
 		pipResult, err := pipinstall.Detect()(context)
 
-		if err != nil {
-			return packit.DetectResult{}, err
+		if err == nil {
+			plans = append(plans, pipResult.Plan)
+		} else {
+			logger.Detail("%s", err)
 		}
 
-		plans = append(plans, pipResult.Plan)
+		condaResult, err := conda.Detect()(context)
+
+		if err == nil {
+			plans = append(plans, condaResult.Plan)
+		} else {
+			logger.Detail("%s", err)
+		}
+
+		if len(plans) == 0 {
+			return packit.DetectResult{}, packit.Fail.WithMessage("No python packager manager related files found")
+		}
 
 		return packit.DetectResult{
 			Plan: or(plans...),
