@@ -60,7 +60,7 @@ var settings struct {
 	}
 }
 
-func TestIntegration(t *testing.T) {
+func TestPipenvIntegration(t *testing.T) {
 	// Do not truncate Gomega matcher output
 	// The buildpack output text can be large and we often want to see all of it.
 	format.MaxLength = 0

@@ -3,6 +3,7 @@ package pythonpackagers
 import (
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/draft"
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/pexec"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
@@ -11,6 +12,7 @@ import (
 	conda "github.com/paketo-buildpacks/python-packagers/pkg/conda"
 	pipinstall "github.com/paketo-buildpacks/python-packagers/pkg/pip"
 	pipenvinstall "github.com/paketo-buildpacks/python-packagers/pkg/pipenv"
+	poetryinstall "github.com/paketo-buildpacks/python-packagers/pkg/poetry"
 )
 
 type Generator struct{}
@@ -82,6 +84,21 @@ func Build(logger scribe.Emitter) packit.BuildFunc {
 				}
 
 				return condaResult, err
+			case poetryinstall.PoetryVenv:
+				poetryResult, err := poetryinstall.Build(
+					draft.NewPlanner(),
+					poetryinstall.NewPoetryInstallProcess(pexec.NewExecutable("poetry"), logger),
+					poetryinstall.NewPythonPathProcess(),
+					Generator{},
+					chronos.DefaultClock,
+					logger,
+				)(context)
+
+				if err != nil {
+					return packit.BuildResult{}, err
+				}
+
+				return poetryResult, err
 			default:
 				return packit.BuildResult{}, packit.Fail.WithMessage("unknown plan: %s", entry.Name)
 			}

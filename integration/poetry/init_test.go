@@ -32,16 +32,16 @@ var buildpackInfo struct {
 var settings struct {
 	Buildpacks struct {
 		CPython struct {
-			Online  string
-			Offline string
+			Online string
 		}
 		Pip struct {
-			Online  string
-			Offline string
+			Online string
 		}
-		PipInstall struct {
-			Online  string
-			Offline string
+		Poetry struct {
+			Online string
+		}
+		PoetryInstall struct {
+			Online string
 		}
 		BuildPlan struct {
 			Online string
@@ -51,18 +51,19 @@ var settings struct {
 	Config struct {
 		CPython   string `json:"cpython"`
 		Pip       string `json:"pip"`
+		Poetry    string `json:"poetry"`
 		BuildPlan string `json:"build-plan"`
 	}
 }
 
-func TestPipIntegration(t *testing.T) {
+func TestPoetryIntegration(t *testing.T) {
 	// Do not truncate Gomega matcher output
 	// The buildpack output text can be large and we often want to see all of it.
 	format.MaxLength = 0
 
 	Expect := NewWithT(t).Expect
 
-	file, err := os.Open("./integration.json")
+	file, err := os.Open("integration.json")
 	Expect(err).NotTo(HaveOccurred())
 
 	Expect(json.NewDecoder(file).Decode(&settings.Config)).To(Succeed())
@@ -77,34 +78,22 @@ func TestPipIntegration(t *testing.T) {
 	root, err := filepath.Abs("./../..")
 	Expect(err).ToNot(HaveOccurred())
 
-	buildpackStore := integration_helpers.NewBuildpackStore("pip")
+	buildpackStore := integration_helpers.NewBuildpackStore("poetry")
 
-	settings.Buildpacks.PipInstall.Online, err = buildpackStore.Get.
+	settings.Buildpacks.PoetryInstall.Online, err = buildpackStore.Get.
 		WithVersion("1.2.3").
 		Execute(root)
 	Expect(err).NotTo(HaveOccurred())
 
-	settings.Buildpacks.PipInstall.Offline, err = buildpackStore.Get.
-		WithVersion("1.2.3").
-		WithOfflineDependencies().
-		Execute(root)
+	settings.Buildpacks.Poetry.Online, err = buildpackStore.Get.
+		Execute(settings.Config.Poetry)
 	Expect(err).NotTo(HaveOccurred())
 
 	settings.Buildpacks.Pip.Online, err = buildpackStore.Get.
 		Execute(settings.Config.Pip)
 	Expect(err).NotTo(HaveOccurred())
 
-	settings.Buildpacks.Pip.Offline, err = buildpackStore.Get.
-		WithOfflineDependencies().
-		Execute(settings.Config.Pip)
-	Expect(err).NotTo(HaveOccurred())
-
 	settings.Buildpacks.CPython.Online, err = buildpackStore.Get.
-		Execute(settings.Config.CPython)
-	Expect(err).NotTo(HaveOccurred())
-
-	settings.Buildpacks.CPython.Offline, err = buildpackStore.Get.
-		WithOfflineDependencies().
 		Execute(settings.Config.CPython)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -116,7 +105,5 @@ func TestPipIntegration(t *testing.T) {
 
 	suite := spec.New("Integration", spec.Report(report.Terminal{}))
 	suite("Default", testDefault, spec.Parallel())
-	suite("Offline", testOffline, spec.Parallel())
-	suite("Reused", testReused, spec.Parallel())
 	suite.Run(t)
 }

@@ -7,6 +7,7 @@ import (
 	conda "github.com/paketo-buildpacks/python-packagers/pkg/conda"
 	pipinstall "github.com/paketo-buildpacks/python-packagers/pkg/pip"
 	pipenvinstall "github.com/paketo-buildpacks/python-packagers/pkg/pipenv"
+	poetryinstall "github.com/paketo-buildpacks/python-packagers/pkg/poetry"
 )
 
 // Detect will return a packit.DetectFunc that will be invoked during the
@@ -41,6 +42,14 @@ func Detect(logger scribe.Emitter) packit.DetectFunc {
 
 		if err == nil {
 			plans = append(plans, pipenvResult.Plan)
+		} else {
+			logger.Detail("%s", err)
+		}
+
+		poetryResult, err := poetryinstall.Detect()(context)
+
+		if err == nil {
+			plans = append(plans, poetryResult.Plan)
 		} else {
 			logger.Detail("%s", err)
 		}
