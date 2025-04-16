@@ -49,7 +49,12 @@ func Detect() packit.DetectFunc {
 		return packit.DetectResult{
 			Plan: packit.BuildPlan{
 				Provides: []packit.BuildPlanProvision{
-					{Name: SitePackages},
+					{
+						Name: SitePackages,
+					},
+					{
+						Name: Manager,
+					},
 				},
 				Requires: []packit.BuildPlanRequirement{
 					{
@@ -60,6 +65,12 @@ func Detect() packit.DetectFunc {
 					},
 					{
 						Name: Pip,
+						Metadata: BuildPlanMetadata{
+							Build: true,
+						},
+					},
+					{
+						Name: Manager,
 						Metadata: BuildPlanMetadata{
 							Build: true,
 						},

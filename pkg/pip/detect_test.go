@@ -38,6 +38,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 			Expect(result.Plan).To(Equal(packit.BuildPlan{
 				Provides: []packit.BuildPlanProvision{
 					{Name: pipinstall.SitePackages},
+					{Name: pipinstall.Manager},
 				},
 				Requires: []packit.BuildPlanRequirement{
 					{
@@ -48,6 +49,12 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 					},
 					{
 						Name: pipinstall.Pip,
+						Metadata: pipinstall.BuildPlanMetadata{
+							Build: true,
+						},
+					},
+					{
+						Name: pipinstall.Manager,
 						Metadata: pipinstall.BuildPlanMetadata{
 							Build: true,
 						},
@@ -76,6 +83,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 				Expect(result.Plan).To(Equal(packit.BuildPlan{
 					Provides: []packit.BuildPlanProvision{
 						{Name: pipinstall.SitePackages},
+						{Name: pipinstall.Manager},
 					},
 					Requires: []packit.BuildPlanRequirement{
 						{
@@ -86,6 +94,12 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 						},
 						{
 							Name: pipinstall.Pip,
+							Metadata: pipinstall.BuildPlanMetadata{
+								Build: true,
+							},
+						},
+						{
+							Name: pipinstall.Manager,
 							Metadata: pipinstall.BuildPlanMetadata{
 								Build: true,
 							},
@@ -127,6 +141,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 					Expect(result.Plan).To(Equal(packit.BuildPlan{
 						Provides: []packit.BuildPlanProvision{
 							{Name: pipinstall.SitePackages},
+							{Name: pipinstall.Manager},
 						},
 						Requires: []packit.BuildPlanRequirement{
 							{
@@ -137,6 +152,12 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 							},
 							{
 								Name: pipinstall.Pip,
+								Metadata: pipinstall.BuildPlanMetadata{
+									Build: true,
+								},
+							},
+							{
+								Name: pipinstall.Manager,
 								Metadata: pipinstall.BuildPlanMetadata{
 									Build: true,
 								},

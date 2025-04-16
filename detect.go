@@ -6,6 +6,7 @@ import (
 
 	conda "github.com/paketo-buildpacks/python-packagers/pkg/conda"
 	pipinstall "github.com/paketo-buildpacks/python-packagers/pkg/pip"
+	pipenvinstall "github.com/paketo-buildpacks/python-packagers/pkg/pipenv"
 )
 
 // Detect will return a packit.DetectFunc that will be invoked during the
@@ -29,6 +30,17 @@ func Detect(logger scribe.Emitter) packit.DetectFunc {
 
 		if err == nil {
 			plans = append(plans, condaResult.Plan)
+		} else {
+			logger.Detail("%s", err)
+		}
+
+		pipenvResult, err := pipenvinstall.Detect(
+			pipenvinstall.NewPipfileParser(),
+			pipenvinstall.NewPipfileLockParser(),
+		)(context)
+
+		if err == nil {
+			plans = append(plans, pipenvResult.Plan)
 		} else {
 			logger.Detail("%s", err)
 		}
