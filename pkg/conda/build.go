@@ -31,7 +31,7 @@ type SBOMGenerator interface {
 // Build updates the conda environment and stores the result in a layer. It may
 // reuse the environment layer from a previous build, depending on conditions
 // determined by the runner.
-func Build(runner Runner, sbomGenerator SBOMGenerator, logger scribe.Emitter, clock chronos.Clock) packit.BuildFunc {
+func Build(runner Runner, sbomGenerator SBOMGenerator, clock chronos.Clock, logger scribe.Emitter) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 

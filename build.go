@@ -75,8 +75,8 @@ func Build(logger scribe.Emitter) packit.BuildFunc {
 				condaResult, err := conda.Build(
 					conda.NewCondaRunner(pexec.NewExecutable("conda"), fs.NewChecksumCalculator(), logger),
 					Generator{},
-					logger,
 					chronos.DefaultClock,
+					logger,
 				)(context)
 
 				if err != nil {
