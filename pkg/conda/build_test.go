@@ -11,6 +11,7 @@ import (
 	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
+	pythonpackagers "github.com/paketo-buildpacks/python-packagers/pkg/common"
 	condaenvupdate "github.com/paketo-buildpacks/python-packagers/pkg/conda"
 	"github.com/paketo-buildpacks/python-packagers/pkg/conda/fakes"
 	"github.com/sclevine/spec"
@@ -57,7 +58,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		buffer = bytes.NewBuffer(nil)
 		logger := scribe.NewEmitter(buffer)
 
-		build = condaenvupdate.Build(runner, sbomGenerator, chronos.DefaultClock, logger)
+		build = condaenvupdate.Build(runner, pythonpackagers.CommonBuildParameters{sbomGenerator, chronos.DefaultClock, logger})
 		buildContext = packit.BuildContext{
 			BuildpackInfo: packit.BuildpackInfo{
 				Name:        "Some Buildpack",

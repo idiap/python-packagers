@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/paketo-buildpacks/packit/v2"
-	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/draft"
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
-	"github.com/paketo-buildpacks/packit/v2/scribe"
+
+	"github.com/paketo-buildpacks/python-packagers/pkg/common"
 )
 
 //go:generate faux --interface Runner --output fakes/runner.go
@@ -21,18 +21,21 @@ type Runner interface {
 	ShouldRun(workingDir string, metadata map[string]interface{}) (bool, string, error)
 }
 
-type SBOMGenerator interface {
-	Generate(dir string) (sbom.SBOM, error)
-}
-
 // Build will return a packit.BuildFunc that will be invoked during the build
 // phase of the buildpack lifecycle.
 //
 // Build updates the conda environment and stores the result in a layer. It may
 // reuse the environment layer from a previous build, depending on conditions
 // determined by the runner.
-func Build(runner Runner, sbomGenerator SBOMGenerator, clock chronos.Clock, logger scribe.Emitter) packit.BuildFunc {
+func Build(
+	runner Runner,
+	parameters pythonpackagers.CommonBuildParameters,
+) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
+		sbomGenerator := parameters.SbomGenerator
+		clock := parameters.Clock
+		logger := parameters.Logger
+
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
 		condaLayer, err := context.Layers.Get(CondaEnvLayer)

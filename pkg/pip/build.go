@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/paketo-buildpacks/packit/v2"
-	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/draft"
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
-	"github.com/paketo-buildpacks/packit/v2/scribe"
+
+	"github.com/paketo-buildpacks/python-packagers/pkg/common"
 )
 
 //go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
@@ -33,18 +33,22 @@ type SitePackagesProcess interface {
 	Execute(layerPath string) (sitePackagesPath string, err error)
 }
 
-type SBOMGenerator interface {
-	Generate(dir string) (sbom.SBOM, error)
-}
-
 // Build will return a packit.BuildFunc that will be invoked during the build
 // phase of the buildpack lifecycle.
 //
 // Build will install the pip dependencies by using the requirements.txt file
 // to a packages layer. It also makes use of a cache layer to reuse the pip
 // cache.
-func Build(installProcess InstallProcess, siteProcess SitePackagesProcess, sbomGenerator SBOMGenerator, clock chronos.Clock, logger scribe.Emitter) packit.BuildFunc {
+func Build(
+	installProcess InstallProcess,
+	siteProcess SitePackagesProcess,
+	parameters pythonpackagers.CommonBuildParameters,
+) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
+		sbomGenerator := parameters.SbomGenerator
+		clock := parameters.Clock
+		logger := parameters.Logger
+
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
 		packagesLayer, err := context.Layers.Get(PackagesLayerName)

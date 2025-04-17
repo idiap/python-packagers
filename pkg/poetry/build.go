@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/paketo-buildpacks/packit/v2"
-	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
-	"github.com/paketo-buildpacks/packit/v2/scribe"
+
+	"github.com/paketo-buildpacks/python-packagers/pkg/common"
 )
 
 //go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
@@ -34,17 +34,22 @@ type PythonPathLookupProcess interface {
 	Execute(venvDir string) (string, error)
 }
 
-type SBOMGenerator interface {
-	Generate(dir string) (sbom.SBOM, error)
-}
-
 // Build will return a packit.BuildFunc that will be invoked during the build
 // phase of the buildpack lifecycle.
 //
 // Build will install the poetry dependencies by using the pyproject.toml file
 // to a virtual environment layer.
-func Build(entryResolver EntryResolver, installProcess InstallProcess, pythonPathProcess PythonPathLookupProcess, sbomGenerator SBOMGenerator, clock chronos.Clock, logger scribe.Emitter) packit.BuildFunc {
+func Build(
+	entryResolver EntryResolver,
+	installProcess InstallProcess,
+	pythonPathProcess PythonPathLookupProcess,
+	parameters pythonpackagers.CommonBuildParameters,
+) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
+		sbomGenerator := parameters.SbomGenerator
+		clock := parameters.Clock
+		logger := parameters.Logger
+
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
 		venvLayer, err := context.Layers.Get(VenvLayerName)

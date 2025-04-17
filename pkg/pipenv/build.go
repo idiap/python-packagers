@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/paketo-buildpacks/packit/v2"
-	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/draft"
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
-	"github.com/paketo-buildpacks/packit/v2/scribe"
+
+	"github.com/paketo-buildpacks/python-packagers/pkg/common"
 )
 
 //go:generate faux --interface InstallProcess --output fakes/install_process.go
@@ -34,10 +34,6 @@ type VenvDirLocator interface {
 	LocateVenvDir(path string) (venvDir string, err error)
 }
 
-type SBOMGenerator interface {
-	Generate(dir string) (sbom.SBOM, error)
-}
-
 // Build will return a packit.BuildFunc that will be invoked during the build
 // phase of the buildpack lifecycle.
 //
@@ -48,11 +44,13 @@ func Build(
 	installProcess InstallProcess,
 	siteProcess SitePackagesProcess,
 	venvDirLocator VenvDirLocator,
-	sbomGenerator SBOMGenerator,
-	clock chronos.Clock,
-	logger scribe.Emitter,
+	parameters pythonpackagers.CommonBuildParameters,
 ) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
+		sbomGenerator := parameters.SbomGenerator
+		clock := parameters.Clock
+		logger := parameters.Logger
+
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
 		packagesLayer, err := context.Layers.Get(PackagesLayerName)

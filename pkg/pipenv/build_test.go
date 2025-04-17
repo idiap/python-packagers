@@ -12,6 +12,7 @@ import (
 	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
+	pythonpackagers "github.com/paketo-buildpacks/python-packagers/pkg/common"
 	pipenvinstall "github.com/paketo-buildpacks/python-packagers/pkg/pipenv"
 	"github.com/paketo-buildpacks/python-packagers/pkg/pipenv/fakes"
 	"github.com/sclevine/spec"
@@ -66,9 +67,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			installProcess,
 			sitePackagesProcess,
 			venvDirLocator,
-			sbomGenerator,
-			chronos.DefaultClock,
-			logEmitter)
+			pythonpackagers.CommonBuildParameters{
+				sbomGenerator,
+				chronos.DefaultClock,
+				logEmitter,
+			})
 
 		buildContext = packit.BuildContext{
 			BuildpackInfo: packit.BuildpackInfo{

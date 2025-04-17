@@ -11,6 +11,7 @@ import (
 	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
+	pythonpackagers "github.com/paketo-buildpacks/python-packagers/pkg/common"
 	pipinstall "github.com/paketo-buildpacks/python-packagers/pkg/pip"
 	"github.com/paketo-buildpacks/python-packagers/pkg/pip/fakes"
 	"github.com/sclevine/spec"
@@ -53,9 +54,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		build = pipinstall.Build(
 			installProcess,
 			sitePackagesProcess,
-			sbomGenerator,
-			chronos.DefaultClock,
-			scribe.NewEmitter(buffer),
+			pythonpackagers.CommonBuildParameters{
+				sbomGenerator,
+				chronos.DefaultClock,
+				scribe.NewEmitter(buffer),
+			},
 		)
 
 		buildContext = packit.BuildContext{
