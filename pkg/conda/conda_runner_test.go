@@ -47,6 +47,8 @@ func testCondaRunner(t *testing.T, context spec.G, it spec.S) {
 		executable.ExecuteCall.Stub = func(ex pexec.Execution) error {
 			executions = append(executions, ex)
 			Expect(os.MkdirAll(filepath.Join(condaLayerPath, "conda-meta"), os.ModePerm)).To(Succeed())
+			// For reasons currently unknown, the search call triggers a permission issue in the tests
+			Expect(os.Chmod(filepath.Join(condaLayerPath, "conda-meta"), os.ModePerm)).To(Succeed())
 			Expect(os.WriteFile(filepath.Join(condaLayerPath, "conda-meta", "history"), []byte("some content"), os.ModePerm)).To(Succeed())
 			fmt.Fprintln(ex.Stdout, "stdout output")
 			fmt.Fprintln(ex.Stderr, "stderr output")
@@ -199,6 +201,8 @@ func testCondaRunner(t *testing.T, context spec.G, it spec.S) {
 					it.Before(func() {
 						executable.ExecuteCall.Stub = func(_ pexec.Execution) error {
 							Expect(os.MkdirAll(filepath.Join(condaLayerPath, "conda-meta"), os.ModePerm)).To(Succeed())
+							// For reasons currently unknown, the search call triggers a permission issue in the tests
+							Expect(os.Chmod(filepath.Join(condaLayerPath, "conda-meta"), os.ModePerm)).To(Succeed())
 							Expect(os.WriteFile(filepath.Join(condaLayerPath, "conda-meta", "history"), []byte("some content"), os.ModePerm)).To(Succeed())
 							Expect(os.Chmod(filepath.Join(condaLayerPath, "conda-meta"), 0)).To(Succeed())
 							return nil
