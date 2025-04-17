@@ -150,7 +150,6 @@ function tests::run() {
   export CGO_ENABLED=0
   pushd "${BUILDPACKDIR}" > /dev/null
     if GOMAXPROCS="${GOMAXPROCS:-4}" go test -count=1 -timeout 0 ./integration/... -v -run Integration | tee "${2}"; then
-    # if GOMAXPROCS="${GOMAXPROCS:-4}" dlv test ./integration/...; then
           util::print::info "** GO Test Succeeded with ${1}**"
     else
       util::print::error "** GO Test Failed with ${1}**"
