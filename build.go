@@ -40,69 +40,97 @@ func Build(
 ) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		planEntries := filtered(context.Plan.Entries, pipinstall.SitePackages)
+		layers := []packit.Layer{}
 
 		for _, entry := range planEntries {
 			logger.Title("Handling %s", entry.Name)
 
 			switch entry.Name {
 			case pipinstall.Manager:
-				pipParameters := buildParameters[pipinstall.Manager].(pipinstall.PipBuildParameters)
-				pipResult, err := pipinstall.Build(
-					pipParameters.InstallProcess,
-					pipParameters.SitePackagesProcess,
-					commonBuildParameters,
-				)(context)
+				if parameters, ok := buildParameters[pipinstall.Manager]; ok {
+					pipParameters := parameters.(pipinstall.PipBuildParameters)
+					pipResult, err := pipinstall.Build(
+						pipParameters.InstallProcess,
+						pipParameters.SitePackagesProcess,
+						commonBuildParameters,
+					)(context)
 
-				if err != nil {
-					return packit.BuildResult{}, err
+					if err != nil {
+						return packit.BuildResult{}, err
+					}
+
+					layers = append(layers, pipResult.Layers...)
+					// return pipResult, err
+				} else {
+					return packit.BuildResult{}, packit.Fail.WithMessage("missing plan for: %s", entry.Name)
 				}
 
-				return pipResult, err
 			case pipenvinstall.Manager:
-				pipenvParameters := buildParameters[pipenvinstall.Manager].(pipenvinstall.PipEnvBuildParameters)
-				pipEnvResult, err := pipenvinstall.Build(
-					pipenvParameters.InstallProcess,
-					pipenvParameters.SiteProcess,
-					pipenvParameters.VenvDirLocator,
-					commonBuildParameters,
-				)(context)
+				if parameters, ok := buildParameters[pipenvinstall.Manager]; ok {
+					pipenvParameters := parameters.(pipenvinstall.PipEnvBuildParameters)
+					pipEnvResult, err := pipenvinstall.Build(
+						pipenvParameters.InstallProcess,
+						pipenvParameters.SiteProcess,
+						pipenvParameters.VenvDirLocator,
+						commonBuildParameters,
+					)(context)
 
-				if err != nil {
-					return packit.BuildResult{}, err
+					if err != nil {
+						return packit.BuildResult{}, err
+					}
+
+					layers = append(layers, pipEnvResult.Layers...)
+					// return pipEnvResult, err
+				} else {
+					return packit.BuildResult{}, packit.Fail.WithMessage("missing plan for: %s", entry.Name)
 				}
-
-				return pipEnvResult, err
 			case conda.CondaEnvPlanEntry:
-				condaParameters := buildParameters[conda.CondaEnvPlanEntry].(conda.CondaBuildParameters)
-				condaResult, err := conda.Build(
-					condaParameters.Runner,
-					commonBuildParameters,
-				)(context)
+				if parameters, ok := buildParameters[conda.CondaEnvPlanEntry]; ok {
+					condaParameters := parameters.(conda.CondaBuildParameters)
+					condaResult, err := conda.Build(
+						condaParameters.Runner,
+						commonBuildParameters,
+					)(context)
 
-				if err != nil {
-					return packit.BuildResult{}, err
+					if err != nil {
+						return packit.BuildResult{}, err
+					}
+
+					layers = append(layers, condaResult.Layers...)
+					// return condaResult, err
+				} else {
+					return packit.BuildResult{}, packit.Fail.WithMessage("missing plan for: %s", entry.Name)
 				}
-
-				return condaResult, err
 			case poetryinstall.PoetryVenv:
-				poetryParameters := buildParameters[poetryinstall.PoetryVenv].(poetryinstall.PoetryEnvBuildParameters)
-				poetryResult, err := poetryinstall.Build(
-					poetryParameters.EntryResolver,
-					poetryParameters.InstallProcess,
-					poetryParameters.PythonPathLookupProcess,
-					commonBuildParameters,
-				)(context)
+				if parameters, ok := buildParameters[poetryinstall.PoetryVenv]; ok {
+					poetryParameters := parameters.(poetryinstall.PoetryEnvBuildParameters)
+					poetryResult, err := poetryinstall.Build(
+						poetryParameters.EntryResolver,
+						poetryParameters.InstallProcess,
+						poetryParameters.PythonPathLookupProcess,
+						commonBuildParameters,
+					)(context)
 
-				if err != nil {
-					return packit.BuildResult{}, err
+					if err != nil {
+						return packit.BuildResult{}, err
+					}
+
+					layers = append(layers, poetryResult.Layers...)
+					// return poetryResult, err
+				} else {
+					return packit.BuildResult{}, packit.Fail.WithMessage("missing plan for: %s", entry.Name)
 				}
-
-				return poetryResult, err
 			default:
 				return packit.BuildResult{}, packit.Fail.WithMessage("unknown plan: %s", entry.Name)
 			}
 		}
 
-		return packit.BuildResult{}, packit.Fail.WithMessage("empty plan should not happen")
+		if len(layers) == 0 {
+			return packit.BuildResult{}, packit.Fail.WithMessage("empty plan should not happen")
+		}
+
+		return packit.BuildResult{
+			Layers: layers,
+		}, nil
 	}
 }
