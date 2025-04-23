@@ -1,3 +1,10 @@
+<!--
+SPDX-FileCopyrightText: © 2025 Idiap Research Institute <contact@idiap.ch>
+SPDX-FileContributor: Samuel Gaist <samuel.gaist@idiap.ch>
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Python Packagers Cloud Native Buildpack
 
 The Paketo Buildpack for Python Packagers is a Cloud Native Buildpack that

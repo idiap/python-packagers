@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Copyright (c) 2013-Present CloudFoundry.org Foundation, Inc. All Rights Reserved.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package poetryinstall
 
 // PoetryVenv is the name of the dependency provided by the Poetry Install
