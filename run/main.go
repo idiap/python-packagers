@@ -10,9 +10,16 @@ import (
 
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/draft"
+	"github.com/paketo-buildpacks/packit/v2/fs"
+	"github.com/paketo-buildpacks/packit/v2/pexec"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 	pythonpackagers "github.com/paketo-buildpacks/python-packagers"
 	pkgcommon "github.com/paketo-buildpacks/python-packagers/pkg/common"
+	conda "github.com/paketo-buildpacks/python-packagers/pkg/conda"
+	pipinstall "github.com/paketo-buildpacks/python-packagers/pkg/pip"
+	pipenvinstall "github.com/paketo-buildpacks/python-packagers/pkg/pipenv"
+	poetryinstall "github.com/paketo-buildpacks/python-packagers/pkg/poetry"
 )
 
 func main() {
@@ -24,8 +31,28 @@ func main() {
 		Logger:        logger,
 	}
 
+	packagerParameters := map[string]pythonpackagers.PackagerParameters{
+		conda.CondaEnvPlanEntry: conda.CondaBuildParameters{
+			Runner: conda.NewCondaRunner(pexec.NewExecutable("conda"), fs.NewChecksumCalculator(), logger),
+		},
+		pipinstall.Manager: pipinstall.PipBuildParameters{
+			InstallProcess:      pipinstall.NewPipInstallProcess(pexec.NewExecutable("pip"), logger),
+			SitePackagesProcess: pipinstall.NewSiteProcess(pexec.NewExecutable("python")),
+		},
+		pipenvinstall.Manager: pipenvinstall.PipEnvBuildParameters{
+			InstallProcess: pipenvinstall.NewPipenvInstallProcess(pexec.NewExecutable("pipenv"), logger),
+			SiteProcess:    pipenvinstall.NewSiteProcess(pexec.NewExecutable("python")),
+			VenvDirLocator: pipenvinstall.NewVenvLocator(),
+		},
+		poetryinstall.PoetryVenv: poetryinstall.PoetryEnvBuildParameters{
+			EntryResolver:           draft.NewPlanner(),
+			InstallProcess:          poetryinstall.NewPoetryInstallProcess(pexec.NewExecutable("poetry"), logger),
+			PythonPathLookupProcess: poetryinstall.NewPythonPathProcess(),
+		},
+	}
+
 	packit.Run(
 		pythonpackagers.Detect(logger),
-		pythonpackagers.Build(logger, buildParameters),
+		pythonpackagers.Build(logger, buildParameters, packagerParameters),
 	)
 }

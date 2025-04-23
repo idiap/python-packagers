@@ -25,6 +25,12 @@ type Runner interface {
 	ShouldRun(workingDir string, metadata map[string]interface{}) (bool, string, error)
 }
 
+// CondaBuildParameters encapsulates the conda specific parameters for the
+// Build function
+type CondaBuildParameters struct {
+	Runner Runner
+}
+
 // Build will return a packit.BuildFunc that will be invoked during the build
 // phase of the buildpack lifecycle.
 //

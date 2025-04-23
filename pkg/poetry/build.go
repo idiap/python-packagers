@@ -38,6 +38,14 @@ type PythonPathLookupProcess interface {
 	Execute(venvDir string) (string, error)
 }
 
+// PoetryEnvBuildParameters encapsulates the poetry specific parameters for the
+// Build function
+type PoetryEnvBuildParameters struct {
+	EntryResolver           EntryResolver
+	InstallProcess          InstallProcess
+	PythonPathLookupProcess PythonPathLookupProcess
+}
+
 // Build will return a packit.BuildFunc that will be invoked during the build
 // phase of the buildpack lifecycle.
 //

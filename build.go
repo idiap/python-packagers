@@ -7,9 +7,6 @@ package pythonpackagers
 
 import (
 	"github.com/paketo-buildpacks/packit/v2"
-	"github.com/paketo-buildpacks/packit/v2/draft"
-	"github.com/paketo-buildpacks/packit/v2/fs"
-	"github.com/paketo-buildpacks/packit/v2/pexec"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 
 	conda "github.com/paketo-buildpacks/python-packagers/pkg/conda"
@@ -33,7 +30,14 @@ func filtered(haystack []packit.BuildpackPlanEntry, needle string) []packit.Buil
 	return output
 }
 
-func Build(logger scribe.Emitter, commonBuildParameters pythonpackagers.CommonBuildParameters) packit.BuildFunc {
+type PackagerParameters interface {
+}
+
+func Build(
+	logger scribe.Emitter,
+	commonBuildParameters pythonpackagers.CommonBuildParameters,
+	buildParameters map[string]PackagerParameters,
+) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		planEntries := filtered(context.Plan.Entries, pipinstall.SitePackages)
 
@@ -42,9 +46,10 @@ func Build(logger scribe.Emitter, commonBuildParameters pythonpackagers.CommonBu
 
 			switch entry.Name {
 			case pipinstall.Manager:
+				pipParameters := buildParameters[pipinstall.Manager].(pipinstall.PipBuildParameters)
 				pipResult, err := pipinstall.Build(
-					pipinstall.NewPipInstallProcess(pexec.NewExecutable("pip"), logger),
-					pipinstall.NewSiteProcess(pexec.NewExecutable("python")),
+					pipParameters.InstallProcess,
+					pipParameters.SitePackagesProcess,
 					commonBuildParameters,
 				)(context)
 
@@ -54,10 +59,11 @@ func Build(logger scribe.Emitter, commonBuildParameters pythonpackagers.CommonBu
 
 				return pipResult, err
 			case pipenvinstall.Manager:
+				pipenvParameters := buildParameters[pipenvinstall.Manager].(pipenvinstall.PipEnvBuildParameters)
 				pipEnvResult, err := pipenvinstall.Build(
-					pipenvinstall.NewPipenvInstallProcess(pexec.NewExecutable("pipenv"), logger),
-					pipenvinstall.NewSiteProcess(pexec.NewExecutable("python")),
-					pipenvinstall.NewVenvLocator(),
+					pipenvParameters.InstallProcess,
+					pipenvParameters.SiteProcess,
+					pipenvParameters.VenvDirLocator,
 					commonBuildParameters,
 				)(context)
 
@@ -67,8 +73,9 @@ func Build(logger scribe.Emitter, commonBuildParameters pythonpackagers.CommonBu
 
 				return pipEnvResult, err
 			case conda.CondaEnvPlanEntry:
+				condaParameters := buildParameters[conda.CondaEnvPlanEntry].(conda.CondaBuildParameters)
 				condaResult, err := conda.Build(
-					conda.NewCondaRunner(pexec.NewExecutable("conda"), fs.NewChecksumCalculator(), logger),
+					condaParameters.Runner,
 					commonBuildParameters,
 				)(context)
 
@@ -78,10 +85,11 @@ func Build(logger scribe.Emitter, commonBuildParameters pythonpackagers.CommonBu
 
 				return condaResult, err
 			case poetryinstall.PoetryVenv:
+				poetryParameters := buildParameters[poetryinstall.PoetryVenv].(poetryinstall.PoetryEnvBuildParameters)
 				poetryResult, err := poetryinstall.Build(
-					draft.NewPlanner(),
-					poetryinstall.NewPoetryInstallProcess(pexec.NewExecutable("poetry"), logger),
-					poetryinstall.NewPythonPathProcess(),
+					poetryParameters.EntryResolver,
+					poetryParameters.InstallProcess,
+					poetryParameters.PythonPathLookupProcess,
 					commonBuildParameters,
 				)(context)
 

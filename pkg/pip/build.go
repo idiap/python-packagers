@@ -37,6 +37,13 @@ type SitePackagesProcess interface {
 	Execute(layerPath string) (sitePackagesPath string, err error)
 }
 
+// PipBuildParameters encapsulates the pip specific parameters for the
+// Build function
+type PipBuildParameters struct {
+	InstallProcess      InstallProcess
+	SitePackagesProcess SitePackagesProcess
+}
+
 // Build will return a packit.BuildFunc that will be invoked during the build
 // phase of the buildpack lifecycle.
 //

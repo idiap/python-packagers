@@ -38,6 +38,12 @@ type VenvDirLocator interface {
 	LocateVenvDir(path string) (venvDir string, err error)
 }
 
+type PipEnvBuildParameters struct {
+	InstallProcess InstallProcess
+	SiteProcess    SitePackagesProcess
+	VenvDirLocator VenvDirLocator
+}
+
 // Build will return a packit.BuildFunc that will be invoked during the build
 // phase of the buildpack lifecycle.
 //
