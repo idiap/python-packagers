@@ -72,9 +72,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			sitePackagesProcess,
 			venvDirLocator,
 			pythonpackagers.CommonBuildParameters{
-				sbomGenerator,
-				chronos.DefaultClock,
-				logEmitter,
+				SbomGenerator: sbomGenerator,
+				Clock:         chronos.DefaultClock,
+				Logger:        logEmitter,
 			})
 
 		buildContext = packit.BuildContext{

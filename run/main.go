@@ -11,7 +11,7 @@ import (
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
-	"github.com/paketo-buildpacks/python-packagers"
+	pythonpackagers "github.com/paketo-buildpacks/python-packagers"
 	pkgcommon "github.com/paketo-buildpacks/python-packagers/pkg/common"
 )
 
@@ -19,9 +19,9 @@ func main() {
 	logger := scribe.NewEmitter(os.Stdout).WithLevel(os.Getenv("BP_LOG_LEVEL"))
 
 	buildParameters := pkgcommon.CommonBuildParameters{
-		pkgcommon.Generator{},
-		chronos.DefaultClock,
-		logger,
+		SbomGenerator: pkgcommon.Generator{},
+		Clock:         chronos.DefaultClock,
+		Logger:        logger,
 	}
 
 	packit.Run(

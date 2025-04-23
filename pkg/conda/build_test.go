@@ -62,7 +62,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		buffer = bytes.NewBuffer(nil)
 		logger := scribe.NewEmitter(buffer)
 
-		build = condaenvupdate.Build(runner, pythonpackagers.CommonBuildParameters{sbomGenerator, chronos.DefaultClock, logger})
+		build = condaenvupdate.Build(
+			runner,
+			pythonpackagers.CommonBuildParameters{
+				SbomGenerator: sbomGenerator,
+				Clock:         chronos.DefaultClock,
+				Logger:        logger,
+			},
+		)
 		buildContext = packit.BuildContext{
 			BuildpackInfo: packit.BuildpackInfo{
 				Name:        "Some Buildpack",

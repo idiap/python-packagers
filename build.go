@@ -17,7 +17,7 @@ import (
 	pipenvinstall "github.com/paketo-buildpacks/python-packagers/pkg/pipenv"
 	poetryinstall "github.com/paketo-buildpacks/python-packagers/pkg/poetry"
 
-	"github.com/paketo-buildpacks/python-packagers/pkg/common"
+	pythonpackagers "github.com/paketo-buildpacks/python-packagers/pkg/common"
 )
 
 // filtered returns the slice passed in parameter with the needle removed

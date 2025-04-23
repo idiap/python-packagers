@@ -72,9 +72,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			installProcess,
 			pythonPathProcess,
 			pythonpackagers.CommonBuildParameters{
-				sbomGenerator,
-				chronos.DefaultClock,
-				scribe.NewEmitter(buffer),
+				SbomGenerator: sbomGenerator,
+				Clock:         chronos.DefaultClock,
+				Logger:        scribe.NewEmitter(buffer),
 			},
 		)
 

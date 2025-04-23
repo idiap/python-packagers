@@ -18,7 +18,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
 
-	"github.com/paketo-buildpacks/python-packagers/integration"
+	integration_helpers "github.com/paketo-buildpacks/python-packagers/integration"
 )
 
 var buildpackInfo struct {
