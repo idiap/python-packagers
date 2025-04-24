@@ -68,9 +68,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		logEmitter = scribe.NewEmitter(buffer)
 
 		build = pipenvinstall.Build(
-			installProcess,
-			sitePackagesProcess,
-			venvDirLocator,
+			pipenvinstall.PipEnvBuildParameters{
+				installProcess,
+				sitePackagesProcess,
+				venvDirLocator,
+			},
 			pythonpackagers.CommonBuildParameters{
 				SbomGenerator: sbomGenerator,
 				Clock:         chronos.DefaultClock,

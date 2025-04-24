@@ -56,8 +56,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		buffer = bytes.NewBuffer(nil)
 
 		build = pipinstall.Build(
-			installProcess,
-			sitePackagesProcess,
+			pipinstall.PipBuildParameters{
+				installProcess,
+				sitePackagesProcess,
+			},
 			pythonpackagers.CommonBuildParameters{
 				SbomGenerator: sbomGenerator,
 				Clock:         chronos.DefaultClock,

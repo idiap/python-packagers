@@ -51,12 +51,14 @@ type PipEnvBuildParameters struct {
 // packages layer. It also makes use of a cache layer to reuse the pipenv
 // cache.
 func Build(
-	installProcess InstallProcess,
-	siteProcess SitePackagesProcess,
-	venvDirLocator VenvDirLocator,
+	buildParameters PipEnvBuildParameters,
 	parameters pythonpackagers.CommonBuildParameters,
 ) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
+		installProcess := buildParameters.InstallProcess
+		siteProcess := buildParameters.SiteProcess
+		venvDirLocator := buildParameters.VenvDirLocator
+
 		sbomGenerator := parameters.SbomGenerator
 		clock := parameters.Clock
 		logger := parameters.Logger

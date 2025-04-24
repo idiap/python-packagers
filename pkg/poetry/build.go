@@ -52,12 +52,14 @@ type PoetryEnvBuildParameters struct {
 // Build will install the poetry dependencies by using the pyproject.toml file
 // to a virtual environment layer.
 func Build(
-	entryResolver EntryResolver,
-	installProcess InstallProcess,
-	pythonPathProcess PythonPathLookupProcess,
+	buildParameters PoetryEnvBuildParameters,
 	parameters pythonpackagers.CommonBuildParameters,
 ) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
+		entryResolver := buildParameters.EntryResolver
+		installProcess := buildParameters.InstallProcess
+		pythonPathProcess := buildParameters.PythonPathLookupProcess
+
 		sbomGenerator := parameters.SbomGenerator
 		clock := parameters.Clock
 		logger := parameters.Logger

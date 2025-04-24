@@ -68,9 +68,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		buffer = bytes.NewBuffer(nil)
 
 		build = poetryinstall.Build(
-			entryResolver,
-			installProcess,
-			pythonPathProcess,
+			poetryinstall.PoetryEnvBuildParameters{
+				entryResolver,
+				installProcess,
+				pythonPathProcess,
+			},
 			pythonpackagers.CommonBuildParameters{
 				SbomGenerator: sbomGenerator,
 				Clock:         chronos.DefaultClock,

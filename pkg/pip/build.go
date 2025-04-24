@@ -51,11 +51,13 @@ type PipBuildParameters struct {
 // to a packages layer. It also makes use of a cache layer to reuse the pip
 // cache.
 func Build(
-	installProcess InstallProcess,
-	siteProcess SitePackagesProcess,
+	buildParameters PipBuildParameters,
 	parameters pythonpackagers.CommonBuildParameters,
 ) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
+		installProcess := buildParameters.InstallProcess
+		siteProcess := buildParameters.SitePackagesProcess
+
 		sbomGenerator := parameters.SbomGenerator
 		clock := parameters.Clock
 		logger := parameters.Logger

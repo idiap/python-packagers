@@ -48,10 +48,8 @@ func Build(
 			switch entry.Name {
 			case pipinstall.Manager:
 				if parameters, ok := buildParameters[pipinstall.Manager]; ok {
-					pipParameters := parameters.(pipinstall.PipBuildParameters)
 					pipResult, err := pipinstall.Build(
-						pipParameters.InstallProcess,
-						pipParameters.SitePackagesProcess,
+						parameters.(pipinstall.PipBuildParameters),
 						commonBuildParameters,
 					)(context)
 
@@ -60,18 +58,14 @@ func Build(
 					}
 
 					layers = append(layers, pipResult.Layers...)
-					// return pipResult, err
 				} else {
 					return packit.BuildResult{}, packit.Fail.WithMessage("missing plan for: %s", entry.Name)
 				}
 
 			case pipenvinstall.Manager:
 				if parameters, ok := buildParameters[pipenvinstall.Manager]; ok {
-					pipenvParameters := parameters.(pipenvinstall.PipEnvBuildParameters)
 					pipEnvResult, err := pipenvinstall.Build(
-						pipenvParameters.InstallProcess,
-						pipenvParameters.SiteProcess,
-						pipenvParameters.VenvDirLocator,
+						parameters.(pipenvinstall.PipEnvBuildParameters),
 						commonBuildParameters,
 					)(context)
 
@@ -80,15 +74,13 @@ func Build(
 					}
 
 					layers = append(layers, pipEnvResult.Layers...)
-					// return pipEnvResult, err
 				} else {
 					return packit.BuildResult{}, packit.Fail.WithMessage("missing plan for: %s", entry.Name)
 				}
 			case conda.CondaEnvPlanEntry:
 				if parameters, ok := buildParameters[conda.CondaEnvPlanEntry]; ok {
-					condaParameters := parameters.(conda.CondaBuildParameters)
 					condaResult, err := conda.Build(
-						condaParameters.Runner,
+						parameters.(conda.CondaBuildParameters),
 						commonBuildParameters,
 					)(context)
 
@@ -97,17 +89,13 @@ func Build(
 					}
 
 					layers = append(layers, condaResult.Layers...)
-					// return condaResult, err
 				} else {
 					return packit.BuildResult{}, packit.Fail.WithMessage("missing plan for: %s", entry.Name)
 				}
 			case poetryinstall.PoetryVenv:
 				if parameters, ok := buildParameters[poetryinstall.PoetryVenv]; ok {
-					poetryParameters := parameters.(poetryinstall.PoetryEnvBuildParameters)
 					poetryResult, err := poetryinstall.Build(
-						poetryParameters.EntryResolver,
-						poetryParameters.InstallProcess,
-						poetryParameters.PythonPathLookupProcess,
+						parameters.(poetryinstall.PoetryEnvBuildParameters),
 						commonBuildParameters,
 					)(context)
 
@@ -116,7 +104,6 @@ func Build(
 					}
 
 					layers = append(layers, poetryResult.Layers...)
-					// return poetryResult, err
 				} else {
 					return packit.BuildResult{}, packit.Fail.WithMessage("missing plan for: %s", entry.Name)
 				}

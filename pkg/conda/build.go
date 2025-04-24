@@ -38,10 +38,11 @@ type CondaBuildParameters struct {
 // reuse the environment layer from a previous build, depending on conditions
 // determined by the runner.
 func Build(
-	runner Runner,
+	buildParameters CondaBuildParameters,
 	parameters pythonpackagers.CommonBuildParameters,
 ) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
+		runner := buildParameters.Runner
 		sbomGenerator := parameters.SbomGenerator
 		clock := parameters.Clock
 		logger := parameters.Logger

@@ -63,7 +63,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		logger := scribe.NewEmitter(buffer)
 
 		build = condaenvupdate.Build(
-			runner,
+			condaenvupdate.CondaBuildParameters{
+				runner,
+			},
 			pythonpackagers.CommonBuildParameters{
 				SbomGenerator: sbomGenerator,
 				Clock:         chronos.DefaultClock,
