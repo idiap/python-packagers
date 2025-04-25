@@ -8,12 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 # Python Packagers Cloud Native Buildpack
 
 The Paketo Buildpack for Python Packagers is a Cloud Native Buildpack that
-installs packages using the adequate tool selected based on the contect of the
+installs packages using the adequate tool selected based on the content of the
 application sources and makes it available to it.
 
 The buildpack is published for consumption at
 `gcr.io/paketo-buildpacks/python-packagers` and
-`paketobuildpacks/python-packageres`.
+`paketobuildpacks/python-packagers`.
 
 ## Behavior
 This buildpack participates if `requirements.txt` exists at the root the app.
