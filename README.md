@@ -18,10 +18,10 @@ The buildpack is published for consumption at
 ## Behavior
 This buildpack participates if one of the following detection succeeds:
 
-- (conda)[conda/README.md] -> `environment.yml`
-- (pip)[pip/README.md] -> `requirements.txt`
-- (pipenv)[pipenv/README.md] -> `Pipfile`
-- (poetry)[poetry/README.md] -> `pyproject.toml`
+- [conda](conda/README.md) -> `environment.yml`
+- [pip](pip/README.md) -> `requirements.txt`
+- [pipenv](pipenv/README.md) -> `Pipfile`
+- [poetry](poetry/README.md) -> `pyproject.toml`
 
 is present in the root folder.
 
