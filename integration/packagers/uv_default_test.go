@@ -113,6 +113,95 @@ func uvTestDefault(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
+		it("rebuilds an oci image but reuses cache", func() {
+			var err error
+
+			var logs fmt.Stringer
+			image, logs, err = pack.WithNoColor().Build.
+				WithPullPolicy("never").
+				WithBuildpacks(
+					settings.Buildpacks.PythonPackageManagersInstall.Online,
+					settings.Buildpacks.PythonPackageManagersRun.Online,
+					settings.Buildpacks.BuildPlan.Online,
+				).
+				Execute(name, source)
+			Expect(err).NotTo(HaveOccurred(), logs.String())
+
+			// Rebuild should reuse cached layer
+			image, logs, err = pack.WithNoColor().Build.
+				WithPullPolicy("never").
+				WithBuildpacks(
+					settings.Buildpacks.PythonPackageManagersInstall.Online,
+					settings.Buildpacks.PythonPackageManagersRun.Online,
+					settings.Buildpacks.BuildPlan.Online,
+				).
+				Execute(name, source)
+			Expect(err).NotTo(HaveOccurred(), logs.String())
+
+			Expect(logs).NotTo(ContainLines(
+				"  Executing build process",
+			))
+			Expect(logs).To(ContainLines(
+				fmt.Sprintf("  Reusing cached layer /layers/%s/uv-env", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+			))
+
+			container, err = docker.Container.Run.
+				WithCommand("python server.py").
+				WithEnv(map[string]string{"PORT": "8080"}).
+				WithPublish("8080").
+				Execute(image.ID)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(container).Should(BeAvailable())
+			Eventually(container).Should(Serve(ContainSubstring("Hello, world!")).OnPort(8080))
+		})
+
+		it("rebuilds an oci image that has the correct behavior when install group changed", func() {
+			var err error
+
+			var logs fmt.Stringer
+			image, logs, err = pack.WithNoColor().Build.
+				WithPullPolicy("never").
+				WithBuildpacks(
+					settings.Buildpacks.PythonPackageManagersInstall.Online,
+					settings.Buildpacks.PythonPackageManagersRun.Online,
+					settings.Buildpacks.BuildPlan.Online,
+				).
+				Execute(name, source)
+			Expect(err).NotTo(HaveOccurred(), logs.String())
+
+			// Rebuild with dev group: should trigger a rebuild (not reuse cached layer)
+			image, logs, err = pack.WithNoColor().Build.
+				WithPullPolicy("never").
+				WithBuildpacks(
+					settings.Buildpacks.PythonPackageManagersInstall.Online,
+					settings.Buildpacks.PythonPackageManagersRun.Online,
+					settings.Buildpacks.BuildPlan.Online,
+				).
+				WithEnv(map[string]string{
+					"BP_UV_INSTALL_GROUPS": "dev",
+				}).
+				Execute(name, source)
+			Expect(err).NotTo(HaveOccurred(), logs.String())
+
+			Expect(logs).To(ContainLines(
+				"  Executing build process",
+			))
+			Expect(logs).NotTo(ContainLines(
+				fmt.Sprintf("  Reusing cached layer /layers/%s/uv-env", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+			))
+
+			container, err = docker.Container.Run.
+				WithCommand("python server.py").
+				WithEnv(map[string]string{"PORT": "8080"}).
+				WithPublish("8080").
+				Execute(image.ID)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(container).Should(BeAvailable())
+			Eventually(container).Should(Serve(ContainSubstring("Hello, world!")).OnPort(8080))
+		})
+
 		context("validating SBOM", func() {
 			var (
 				sbomDir string

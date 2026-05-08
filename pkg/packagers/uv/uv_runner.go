@@ -6,6 +6,7 @@
 package uvinstall
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"os"
@@ -39,9 +40,9 @@ func NewUvRunner(executable executable.Executable, summer summer.Summer, logger 
 // ShouldRun determines whether the uv environment setup command needs to be
 // run, given the path to the app directory and the metadata from the
 // preexisting uv-env layer. It returns true if the uv environment setup
-// command must be run during this build, the SHA256 of the uv.lock in
-// the app directory, and an error. If there is no uv.lock, the sha
-// returned is an empty string.
+// command must be run during this build, the SHA256 of combination of
+// the uv.lock in the app directory and specified installed groups and an error.
+// If there is no uv.lock, the sha returned as an empty string.
 func (c UvRunner) ShouldRun(workingDir string, metadata map[string]interface{}) (run bool, sha string, err error) {
 	lockfilePath := filepath.Join(workingDir, LockfileName)
 	_, err = os.Stat(lockfilePath)
@@ -54,16 +55,23 @@ func (c UvRunner) ShouldRun(workingDir string, metadata map[string]interface{}) 
 		return false, "", err
 	}
 
-	updatedLockfileSha, err := c.summer.Sum(lockfilePath)
+	generatedSha, err := c.summer.Sum(lockfilePath)
 	if err != nil {
 		return false, "", err
 	}
 
-	if updatedLockfileSha == metadata[LockfileShaName] {
-		return false, updatedLockfileSha, nil
+	installGroups, installGroupsPresent := os.LookupEnv(UvInstallGroups)
+	if installGroupsPresent {
+		h := sha256.New()
+		h.Write([]byte(installGroups))
+		generatedSha = fmt.Sprintf("%s-%x", generatedSha, h.Sum(nil))
 	}
 
-	return true, updatedLockfileSha, nil
+	if generatedSha == metadata[UvEnvLayerCacheSha] {
+		return false, generatedSha, nil
+	}
+
+	return true, generatedSha, nil
 }
 
 // Execute runs the uv environment setup command and cleans up unnecessary
@@ -82,7 +90,7 @@ func (c UvRunner) Execute(uvLayerPath string, uvCachePath string, workingDir str
 
 	venvPath := filepath.Join(uvLayerPath, "venv")
 
-	userFindLinks, _ := os.LookupEnv("BP_UV_FIND_LINKS")
+	userFindLinks, _ := os.LookupEnv(UvFindLinks)
 	findLinks, _ := os.LookupEnv("UV_FIND_LINKS")
 
 	combinedFindLinks := []string{userFindLinks, findLinks}
@@ -112,7 +120,7 @@ func (c UvRunner) Execute(uvLayerPath string, uvCachePath string, workingDir str
 	}
 	env = append(env, fmt.Sprintf("UV_FIND_LINKS=%s", strings.TrimLeft(strings.Join(combinedFindLinks, " "), " ")))
 
-	installGroups, installGroupsPresent := os.LookupEnv("BP_UV_INSTALL_GROUPS")
+	installGroups, installGroupsPresent := os.LookupEnv(UvInstallGroups)
 	if installGroupsPresent {
 		for _, group := range strings.Split(installGroups, ",") {
 			args = append(args, fmt.Sprintf("--group=%s", group))

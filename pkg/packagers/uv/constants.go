@@ -19,10 +19,18 @@ const (
 	// dependency that this buildpack requires.
 	UvPlanEntry = "uv"
 
-	// LockfileShaName is the key in the Layer Content Metadata used to determine if layer
+	// UvEnvLayerCacheSha is the key in the Layer Content Metadata used to determine if layer
 	// can be reused.
-	LockfileShaName = "lockfile-sha"
+	UvEnvLayerCacheSha = "layer-cache-sha"
 
 	// LockfileName is the name of the export file from which the buildpack reinstalls packages
 	LockfileName = "uv.lock"
+
+	// Config environmental variables
+
+	// Used to specify one or more directories to pass to `--find-links`
+	UvFindLinks = "BP_UV_FIND_LINKS"
+
+	// List of additional groups divided by comma which should be installed
+	UvInstallGroups = "BP_UV_INSTALL_GROUPS"
 )

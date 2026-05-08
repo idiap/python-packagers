@@ -7,6 +7,7 @@ package uvinstall_test
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"os"
@@ -99,18 +100,22 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 			it.Before(func() {
 				Expect(os.WriteFile(filepath.Join(workingDir, uv.LockfileName), nil, os.ModePerm)).To(Succeed())
 			})
+			it.After(func() {
+				Expect(os.Unsetenv(uv.UvInstallGroups)).To(Succeed())
+			})
+
 			context("and the lockfile sha is unchanged", func() {
 				it("return false, with the existing sha, and no error", func() {
 					summer.SumCall.Returns.String = "a-sha"
 					Expect(os.WriteFile(filepath.Join(workingDir, uv.LockfileName), nil, os.ModePerm)).To(Succeed())
 
 					metadata := map[string]interface{}{
-						"lockfile-sha": "a-sha",
+						uv.UvEnvLayerCacheSha: summer.SumCall.Returns.String,
 					}
 
 					run, sha, err := runner.ShouldRun(workingDir, metadata)
+					Expect(sha).To(Equal(summer.SumCall.Returns.String))
 					Expect(run).To(BeFalse())
-					Expect(sha).To(Equal("a-sha"))
 					Expect(err).NotTo(HaveOccurred())
 				})
 				context("and there is and error summing the lock file", func() {
@@ -131,12 +136,29 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 			it("returns true, with a new sha, and no error when the lockfile has changed", func() {
 				summer.SumCall.Returns.String = "a-new-sha"
 				metadata := map[string]interface{}{
-					uv.LockfileShaName: "a-sha",
+					uv.UvEnvLayerCacheSha: "a-old-sha",
 				}
 
 				run, sha, err := runner.ShouldRun(workingDir, metadata)
+				Expect(sha).To(Equal(summer.SumCall.Returns.String))
 				Expect(run).To(BeTrue())
-				Expect(sha).To(Equal("a-new-sha"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			it("returns true, with a new sha, and no error when groups are specified", func() {
+				Expect(os.Setenv(uv.UvInstallGroups, "dev,local")).To(Succeed())
+				summer.SumCall.Returns.String = "a-new-sha"
+				metadata := map[string]interface{}{
+					uv.UvEnvLayerCacheSha: summer.SumCall.Returns.String,
+				}
+				installGroups, _ := os.LookupEnv(uv.UvInstallGroups)
+				h := sha256.New()
+				h.Write([]byte(installGroups))
+				generatedSha := fmt.Sprintf("%s-%x", summer.SumCall.Returns.String, h.Sum(nil))
+
+				run, sha, err := runner.ShouldRun(workingDir, metadata)
+				Expect(sha).To(Equal(generatedSha))
+				Expect(run).To(BeTrue())
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -169,7 +191,7 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 				Expect(executions[0].Env).To(ContainElement("UV_PYTHON=/layers/paketo-buildpacks_cpython/cpython/bin/python"))
 				Expect(executions[0].Env).To(ContainElement("UV_OFFLINE=1"))
 				Expect(executions[0].Env).To(ContainElement("LD_LIBRARY_PATH=/layers/paketo-buildpacks_cpython/cpython/lib"))
-				userFindLinks, _ := os.LookupEnv("BP_UV_FIND_LINKS")
+				userFindLinks, _ := os.LookupEnv(uv.UvFindLinks)
 				findLinks, _ := os.LookupEnv("UV_FIND_LINKS")
 				combinedFindLinks := []string{userFindLinks, findLinks}
 				combinedFindLinks = append(combinedFindLinks, vendorPath)
@@ -237,7 +259,7 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_PROJECT_ENVIRONMENT=%s", venvPath)))
 				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_WORKING_DIR=%s", workingDir)))
 				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_CACHE_DIR=%s", uvCachePath)))
-				userFindLinks, _ := os.LookupEnv("BP_UV_FIND_LINKS")
+				userFindLinks, _ := os.LookupEnv(uv.UvFindLinks)
 				findLinks, _ := os.LookupEnv("UV_FIND_LINKS")
 				combinedFindLinks := []string{userFindLinks, findLinks}
 				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_FIND_LINKS=%s", strings.TrimLeft(strings.Join(combinedFindLinks, " "), " "))))
@@ -271,13 +293,13 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 
 		context("when a lockfile exists with groups specified", func() {
 			it.Before(func() {
-				Expect(os.Setenv("BP_UV_INSTALL_GROUPS", "dev,local")).To(Succeed())
+				Expect(os.Setenv(uv.UvInstallGroups, "dev,local")).To(Succeed())
 				Expect(os.WriteFile(filepath.Join(workingDir, uv.LockfileName), nil, os.ModePerm)).To(Succeed())
 			})
 
 			it.After(func() {
 				Expect(os.RemoveAll(filepath.Join(workingDir, uv.LockfileName))).To(Succeed())
-				Expect(os.Unsetenv("BP_UV_INSTALL_GROUPS")).To(Succeed())
+				Expect(os.Unsetenv(uv.UvInstallGroups)).To(Succeed())
 			})
 
 			it("runs uv create with the cache layer available in the environment", func() {
@@ -298,7 +320,7 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_PROJECT_ENVIRONMENT=%s", venvPath)))
 				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_WORKING_DIR=%s", workingDir)))
 				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_CACHE_DIR=%s", uvCachePath)))
-				userFindLinks, _ := os.LookupEnv("BP_UV_FIND_LINKS")
+				userFindLinks, _ := os.LookupEnv(uv.UvFindLinks)
 				findLinks, _ := os.LookupEnv("UV_FIND_LINKS")
 				combinedFindLinks := []string{userFindLinks, findLinks}
 				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_FIND_LINKS=%s", strings.TrimLeft(strings.Join(combinedFindLinks, " "), " "))))
