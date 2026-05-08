@@ -108,7 +108,7 @@ func Build(
 			logger.EnvironmentVariables(uvLayer)
 
 			uvLayer.Metadata = map[string]interface{}{
-				LockfileShaName: sha,
+				UvEnvLayerCacheSha: sha,
 			}
 		} else {
 			logger.Process("Reusing cached layer %s", uvLayer.Path)
