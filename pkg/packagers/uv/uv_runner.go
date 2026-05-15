@@ -66,6 +66,18 @@ func (c UvRunner) ShouldRun(workingDir string, metadata map[string]interface{}) 
 		h.Write([]byte(installGroups))
 		generatedSha = fmt.Sprintf("%s-%x", generatedSha, h.Sum(nil))
 	}
+	_, uvLockedPresent := os.LookupEnv(UvLocked)
+	if uvLockedPresent {
+		generatedSha = fmt.Sprintf("%s-%x", generatedSha, "locked")
+	}
+	_, uvCompileByteCodePresent := os.LookupEnv(UvCompileByteCode)
+	if uvCompileByteCodePresent {
+		generatedSha = fmt.Sprintf("%s-%x", generatedSha, "compile-byte-code")
+	}
+	_, uvPreviewPresent := os.LookupEnv(UvPreview)
+	if uvPreviewPresent {
+		generatedSha = fmt.Sprintf("%s-%x", generatedSha, "preview")
+	}
 
 	if generatedSha == metadata[UvEnvLayerCacheSha] {
 		return false, generatedSha, nil
@@ -125,6 +137,18 @@ func (c UvRunner) Execute(uvLayerPath string, uvCachePath string, workingDir str
 		for _, group := range strings.Split(installGroups, ",") {
 			args = append(args, fmt.Sprintf("--group=%s", group))
 		}
+	}
+	_, uvLockedPresent := os.LookupEnv(UvLocked)
+	if uvLockedPresent {
+		env = append(env, "UV_LOCKED=1")
+	}
+	_, uvCompileByteCodePresent := os.LookupEnv(UvCompileByteCode)
+	if uvCompileByteCodePresent {
+		env = append(env, "UV_COMPILE_BYTECODE=1")
+	}
+	_, uvPreviewPresent := os.LookupEnv(UvPreview)
+	if uvPreviewPresent {
+		env = append(env, "UV_PREVIEW=1")
 	}
 
 	c.logger.Subprocess("%s\nRunning 'uv %s'", strings.Join(env, "\n"), strings.Join(args, " "))

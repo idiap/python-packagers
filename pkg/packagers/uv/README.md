@@ -74,3 +74,32 @@ to install. This should be a comma-separated list of group names.
 ```shell
 BP_UV_INSTALL_GROUPS=dev,test
 ```
+
+### `BP_UV_LOCKED`
+
+The `BP_UV_LOCKED` variable, when set, asserts that the `uv.lock` file remains
+unchanged. uv will exit with an error if the lock file is not up-to-date with
+the `pyproject.toml`.
+
+```shell
+BP_UV_LOCKED=1
+```
+
+### `BP_UV_COMPILE_BYTECODE`
+
+The `BP_UV_COMPILE_BYTECODE` variable, when set, instructs uv to compile
+Python source files to bytecode after installation. This can improve startup
+time of the application.
+
+```shell
+BP_UV_COMPILE_BYTECODE=1
+```
+
+### `BP_UV_PREVIEW`
+
+The `BP_UV_PREVIEW` variable, when set, enables preview mode for uv. This
+allows the use of experimental uv features.
+
+```shell
+BP_UV_PREVIEW=1
+```

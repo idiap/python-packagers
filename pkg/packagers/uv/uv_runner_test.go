@@ -102,6 +102,9 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 			})
 			it.After(func() {
 				Expect(os.Unsetenv(uv.UvInstallGroups)).To(Succeed())
+				Expect(os.Unsetenv(uv.UvLocked)).To(Succeed())
+				Expect(os.Unsetenv(uv.UvCompileByteCode)).To(Succeed())
+				Expect(os.Unsetenv(uv.UvPreview)).To(Succeed())
 			})
 
 			context("and the lockfile sha is unchanged", func() {
@@ -155,6 +158,48 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 				h := sha256.New()
 				h.Write([]byte(installGroups))
 				generatedSha := fmt.Sprintf("%s-%x", summer.SumCall.Returns.String, h.Sum(nil))
+
+				run, sha, err := runner.ShouldRun(workingDir, metadata)
+				Expect(sha).To(Equal(generatedSha))
+				Expect(run).To(BeTrue())
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			it("returns true, with a new sha, and no error when locked is enabled", func() {
+				Expect(os.Setenv(uv.UvLocked, "1")).To(Succeed())
+				summer.SumCall.Returns.String = "a-new-sha"
+				metadata := map[string]interface{}{
+					uv.UvEnvLayerCacheSha: summer.SumCall.Returns.String,
+				}
+				generatedSha := fmt.Sprintf("%s-%x", summer.SumCall.Returns.String, "locked")
+
+				run, sha, err := runner.ShouldRun(workingDir, metadata)
+				Expect(sha).To(Equal(generatedSha))
+				Expect(run).To(BeTrue())
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			it("returns true, with a new sha, and no error when bytecode compilation is enabled", func() {
+				Expect(os.Setenv(uv.UvCompileByteCode, "1")).To(Succeed())
+				summer.SumCall.Returns.String = "a-new-sha"
+				metadata := map[string]interface{}{
+					uv.UvEnvLayerCacheSha: summer.SumCall.Returns.String,
+				}
+				generatedSha := fmt.Sprintf("%s-%x", summer.SumCall.Returns.String, "compile-byte-code")
+
+				run, sha, err := runner.ShouldRun(workingDir, metadata)
+				Expect(sha).To(Equal(generatedSha))
+				Expect(run).To(BeTrue())
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			it("returns true, with a new sha, and no error when preview is enabled", func() {
+				Expect(os.Setenv(uv.UvPreview, "1")).To(Succeed())
+				summer.SumCall.Returns.String = "a-new-sha"
+				metadata := map[string]interface{}{
+					uv.UvEnvLayerCacheSha: summer.SumCall.Returns.String,
+				}
+				generatedSha := fmt.Sprintf("%s-%x", summer.SumCall.Returns.String, "preview")
 
 				run, sha, err := runner.ShouldRun(workingDir, metadata)
 				Expect(sha).To(Equal(generatedSha))
@@ -351,6 +396,184 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 			})
 
 		})
+
+		context("when a lockfile exists with locked enabled", func() {
+			it.Before(func() {
+				Expect(os.Setenv(uv.UvLocked, "1")).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, uv.LockfileName), nil, os.ModePerm)).To(Succeed())
+			})
+
+			it.After(func() {
+				Expect(os.RemoveAll(filepath.Join(workingDir, uv.LockfileName))).To(Succeed())
+				Expect(os.Unsetenv(uv.UvLocked)).To(Succeed())
+			})
+
+			it("runs uv sync with UV_LOCKED set in the environment", func() {
+				err := runner.Execute(uvLayerPath, uvCachePath, workingDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(executable.ExecuteCall.CallCount).To(Equal(1))
+
+				Expect(executions[0].Args).To(Equal([]string{
+					"sync",
+				}))
+				venvPath := filepath.Join(uvLayerPath, "venv")
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("HOME=%s", uvLayerPath)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("VIRTUAL_ENV=%s", venvPath)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_PROJECT_ENVIRONMENT=%s", venvPath)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_WORKING_DIR=%s", workingDir)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_CACHE_DIR=%s", uvCachePath)))
+				Expect(executions[0].Env).To(ContainElement("UV_LOCKED=1"))
+				userFindLinks, _ := os.LookupEnv(uv.UvFindLinks)
+				findLinks, _ := os.LookupEnv("UV_FIND_LINKS")
+				combinedFindLinks := []string{userFindLinks, findLinks}
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_FIND_LINKS=%s", strings.TrimLeft(strings.Join(combinedFindLinks, " "), " "))))
+			})
+
+			context("failure cases", func() {
+				context("when the uv env command fails to run", func() {
+					it.Before(func() {
+						executable.ExecuteCall.Stub = func(ex pexec.Execution) error {
+							_, err := fmt.Fprintln(ex.Stdout, "uv error stdout")
+							Expect(err).NotTo(HaveOccurred())
+							_, err = fmt.Fprintln(ex.Stderr, "uv error stderr")
+							Expect(err).NotTo(HaveOccurred())
+							return errors.New("some uv failure")
+						}
+					})
+
+					it("returns an error and logs the stdout and stderr output from the command", func() {
+						err := runner.Execute(uvLayerPath, uvCachePath, workingDir)
+						Expect(err).To(MatchError("failed to run uv command: some uv failure"))
+						Expect(buffer.String()).To(ContainLines(
+							"    Running 'uv sync'",
+							"      uv error stdout",
+							"      uv error stderr",
+						))
+					})
+				})
+			})
+
+		})
+
+		context("when a lockfile exists with bytecode compilation enabled", func() {
+			it.Before(func() {
+				Expect(os.Setenv(uv.UvCompileByteCode, "1")).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, uv.LockfileName), nil, os.ModePerm)).To(Succeed())
+			})
+
+			it.After(func() {
+				Expect(os.RemoveAll(filepath.Join(workingDir, uv.LockfileName))).To(Succeed())
+				Expect(os.Unsetenv(uv.UvCompileByteCode)).To(Succeed())
+			})
+
+			it("runs uv sync with UV_COMPILE_BYTECODE set in the environment", func() {
+				err := runner.Execute(uvLayerPath, uvCachePath, workingDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(executable.ExecuteCall.CallCount).To(Equal(1))
+
+				Expect(executions[0].Args).To(Equal([]string{
+					"sync",
+				}))
+				venvPath := filepath.Join(uvLayerPath, "venv")
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("HOME=%s", uvLayerPath)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("VIRTUAL_ENV=%s", venvPath)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_PROJECT_ENVIRONMENT=%s", venvPath)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_WORKING_DIR=%s", workingDir)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_CACHE_DIR=%s", uvCachePath)))
+				Expect(executions[0].Env).To(ContainElement("UV_COMPILE_BYTECODE=1"))
+				userFindLinks, _ := os.LookupEnv(uv.UvFindLinks)
+				findLinks, _ := os.LookupEnv("UV_FIND_LINKS")
+				combinedFindLinks := []string{userFindLinks, findLinks}
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_FIND_LINKS=%s", strings.TrimLeft(strings.Join(combinedFindLinks, " "), " "))))
+			})
+
+			context("failure cases", func() {
+				context("when the uv env command fails to run", func() {
+					it.Before(func() {
+						executable.ExecuteCall.Stub = func(ex pexec.Execution) error {
+							_, err := fmt.Fprintln(ex.Stdout, "uv error stdout")
+							Expect(err).NotTo(HaveOccurred())
+							_, err = fmt.Fprintln(ex.Stderr, "uv error stderr")
+							Expect(err).NotTo(HaveOccurred())
+							return errors.New("some uv failure")
+						}
+					})
+
+					it("returns an error and logs the stdout and stderr output from the command", func() {
+						err := runner.Execute(uvLayerPath, uvCachePath, workingDir)
+						Expect(err).To(MatchError("failed to run uv command: some uv failure"))
+						Expect(buffer.String()).To(ContainLines(
+							"    Running 'uv sync'",
+							"      uv error stdout",
+							"      uv error stderr",
+						))
+					})
+				})
+			})
+
+		})
+
+		context("when a lockfile exists with preview enabled", func() {
+			it.Before(func() {
+				Expect(os.Setenv(uv.UvPreview, "1")).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, uv.LockfileName), nil, os.ModePerm)).To(Succeed())
+			})
+
+			it.After(func() {
+				Expect(os.RemoveAll(filepath.Join(workingDir, uv.LockfileName))).To(Succeed())
+				Expect(os.Unsetenv(uv.UvPreview)).To(Succeed())
+			})
+
+			it("runs uv sync with UV_PREVIEW set in the environment", func() {
+				err := runner.Execute(uvLayerPath, uvCachePath, workingDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(executable.ExecuteCall.CallCount).To(Equal(1))
+
+				Expect(executions[0].Args).To(Equal([]string{
+					"sync",
+				}))
+				venvPath := filepath.Join(uvLayerPath, "venv")
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("HOME=%s", uvLayerPath)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("VIRTUAL_ENV=%s", venvPath)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_PROJECT_ENVIRONMENT=%s", venvPath)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_WORKING_DIR=%s", workingDir)))
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_CACHE_DIR=%s", uvCachePath)))
+				Expect(executions[0].Env).To(ContainElement("UV_PREVIEW=1"))
+				userFindLinks, _ := os.LookupEnv(uv.UvFindLinks)
+				findLinks, _ := os.LookupEnv("UV_FIND_LINKS")
+				combinedFindLinks := []string{userFindLinks, findLinks}
+				Expect(executions[0].Env).To(ContainElement(fmt.Sprintf("UV_FIND_LINKS=%s", strings.TrimLeft(strings.Join(combinedFindLinks, " "), " "))))
+			})
+
+			context("failure cases", func() {
+				context("when the uv env command fails to run", func() {
+					it.Before(func() {
+						executable.ExecuteCall.Stub = func(ex pexec.Execution) error {
+							_, err := fmt.Fprintln(ex.Stdout, "uv error stdout")
+							Expect(err).NotTo(HaveOccurred())
+							_, err = fmt.Fprintln(ex.Stderr, "uv error stderr")
+							Expect(err).NotTo(HaveOccurred())
+							return errors.New("some uv failure")
+						}
+					})
+
+					it("returns an error and logs the stdout and stderr output from the command", func() {
+						err := runner.Execute(uvLayerPath, uvCachePath, workingDir)
+						Expect(err).To(MatchError("failed to run uv command: some uv failure"))
+						Expect(buffer.String()).To(ContainLines(
+							"    Running 'uv sync'",
+							"      uv error stdout",
+							"      uv error stderr",
+						))
+					})
+				})
+			})
+
+		})
+
 		context("when no vendor dir or lockfile exists", func() {
 			context("failure cases", func() {
 				context("when no lockfile exists", func() {
