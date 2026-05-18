@@ -101,10 +101,6 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 				Expect(os.WriteFile(filepath.Join(workingDir, uv.LockfileName), nil, os.ModePerm)).To(Succeed())
 			})
 			it.After(func() {
-				Expect(os.Unsetenv(uv.UvInstallGroups)).To(Succeed())
-				Expect(os.Unsetenv(uv.UvLocked)).To(Succeed())
-				Expect(os.Unsetenv(uv.UvCompileByteCode)).To(Succeed())
-				Expect(os.Unsetenv(uv.UvPreview)).To(Succeed())
 			})
 
 			context("and the lockfile sha is unchanged", func() {
@@ -149,7 +145,7 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns true, with a new sha, and no error when groups are specified", func() {
-				Expect(os.Setenv(uv.UvInstallGroups, "dev,local")).To(Succeed())
+				t.Setenv(uv.UvInstallGroups, "dev,local")
 				summer.SumCall.Returns.String = "a-new-sha"
 				metadata := map[string]interface{}{
 					uv.UvEnvLayerCacheSha: summer.SumCall.Returns.String,
@@ -166,7 +162,7 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns true, with a new sha, and no error when locked is enabled", func() {
-				Expect(os.Setenv(uv.UvLocked, "1")).To(Succeed())
+				t.Setenv(uv.UvLocked, "1")
 				summer.SumCall.Returns.String = "a-new-sha"
 				metadata := map[string]interface{}{
 					uv.UvEnvLayerCacheSha: summer.SumCall.Returns.String,
@@ -180,7 +176,7 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns true, with a new sha, and no error when bytecode compilation is enabled", func() {
-				Expect(os.Setenv(uv.UvCompileByteCode, "1")).To(Succeed())
+				t.Setenv(uv.UvCompileByteCode, "1")
 				summer.SumCall.Returns.String = "a-new-sha"
 				metadata := map[string]interface{}{
 					uv.UvEnvLayerCacheSha: summer.SumCall.Returns.String,
@@ -194,7 +190,7 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns true, with a new sha, and no error when preview is enabled", func() {
-				Expect(os.Setenv(uv.UvPreview, "1")).To(Succeed())
+				t.Setenv(uv.UvPreview, "1")
 				summer.SumCall.Returns.String = "a-new-sha"
 				metadata := map[string]interface{}{
 					uv.UvEnvLayerCacheSha: summer.SumCall.Returns.String,
@@ -338,13 +334,12 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 
 		context("when a lockfile exists with groups specified", func() {
 			it.Before(func() {
-				Expect(os.Setenv(uv.UvInstallGroups, "dev,local")).To(Succeed())
+				t.Setenv(uv.UvInstallGroups, "dev,local")
 				Expect(os.WriteFile(filepath.Join(workingDir, uv.LockfileName), nil, os.ModePerm)).To(Succeed())
 			})
 
 			it.After(func() {
 				Expect(os.RemoveAll(filepath.Join(workingDir, uv.LockfileName))).To(Succeed())
-				Expect(os.Unsetenv(uv.UvInstallGroups)).To(Succeed())
 			})
 
 			it("runs uv create with the cache layer available in the environment", func() {
@@ -399,13 +394,12 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 
 		context("when a lockfile exists with locked enabled", func() {
 			it.Before(func() {
-				Expect(os.Setenv(uv.UvLocked, "1")).To(Succeed())
+				t.Setenv(uv.UvLocked, "1")
 				Expect(os.WriteFile(filepath.Join(workingDir, uv.LockfileName), nil, os.ModePerm)).To(Succeed())
 			})
 
 			it.After(func() {
 				Expect(os.RemoveAll(filepath.Join(workingDir, uv.LockfileName))).To(Succeed())
-				Expect(os.Unsetenv(uv.UvLocked)).To(Succeed())
 			})
 
 			it("runs uv sync with UV_LOCKED set in the environment", func() {
@@ -458,13 +452,12 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 
 		context("when a lockfile exists with bytecode compilation enabled", func() {
 			it.Before(func() {
-				Expect(os.Setenv(uv.UvCompileByteCode, "1")).To(Succeed())
+				t.Setenv(uv.UvCompileByteCode, "1")
 				Expect(os.WriteFile(filepath.Join(workingDir, uv.LockfileName), nil, os.ModePerm)).To(Succeed())
 			})
 
 			it.After(func() {
 				Expect(os.RemoveAll(filepath.Join(workingDir, uv.LockfileName))).To(Succeed())
-				Expect(os.Unsetenv(uv.UvCompileByteCode)).To(Succeed())
 			})
 
 			it("runs uv sync with UV_COMPILE_BYTECODE set in the environment", func() {
@@ -517,13 +510,12 @@ func testUvRunner(t *testing.T, context spec.G, it spec.S) {
 
 		context("when a lockfile exists with preview enabled", func() {
 			it.Before(func() {
-				Expect(os.Setenv(uv.UvPreview, "1")).To(Succeed())
+				t.Setenv(uv.UvPreview, "1")
 				Expect(os.WriteFile(filepath.Join(workingDir, uv.LockfileName), nil, os.ModePerm)).To(Succeed())
 			})
 
 			it.After(func() {
 				Expect(os.RemoveAll(filepath.Join(workingDir, uv.LockfileName))).To(Succeed())
-				Expect(os.Unsetenv(uv.UvPreview)).To(Succeed())
 			})
 
 			it("runs uv sync with UV_PREVIEW set in the environment", func() {
