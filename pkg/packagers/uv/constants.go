@@ -33,4 +33,13 @@ const (
 
 	// List of additional groups divided by comma which should be installed
 	UvInstallGroups = "BP_UV_INSTALL_GROUPS"
+
+	// UV will assert that the uv.lock remains unchanged
+	UvLocked = "BP_UV_LOCKED"
+
+	// UV will compile Python source files to bytecode after installation
+	UvCompileByteCode = "BP_UV_COMPILE_BYTECODE"
+
+	// Enables preview mode for uv
+	UvPreview = "BP_UV_PREVIEW"
 )

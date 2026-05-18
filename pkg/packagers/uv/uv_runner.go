@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/paketo-buildpacks/packit/v2/fs"
@@ -65,6 +66,18 @@ func (c UvRunner) ShouldRun(workingDir string, metadata map[string]interface{}) 
 		h := sha256.New()
 		h.Write([]byte(installGroups))
 		generatedSha = fmt.Sprintf("%s-%x", generatedSha, h.Sum(nil))
+	}
+	uvLocked, uvLockedPresent := os.LookupEnv(UvLocked)
+	if uvLockedPresent && slices.Contains([]string{"1", "true"}, uvLocked) {
+		generatedSha = fmt.Sprintf("%s-%x", generatedSha, "locked")
+	}
+	uvCompileByteCode, uvCompileByteCodePresent := os.LookupEnv(UvCompileByteCode)
+	if uvCompileByteCodePresent && slices.Contains([]string{"1", "true"}, uvCompileByteCode) {
+		generatedSha = fmt.Sprintf("%s-%x", generatedSha, "compile-byte-code")
+	}
+	uvPreview, uvPreviewPresent := os.LookupEnv(UvPreview)
+	if uvPreviewPresent && slices.Contains([]string{"1", "true"}, uvPreview) {
+		generatedSha = fmt.Sprintf("%s-%x", generatedSha, "preview")
 	}
 
 	if generatedSha == metadata[UvEnvLayerCacheSha] {
@@ -125,6 +138,19 @@ func (c UvRunner) Execute(uvLayerPath string, uvCachePath string, workingDir str
 		for _, group := range strings.Split(installGroups, ",") {
 			args = append(args, fmt.Sprintf("--group=%s", group))
 		}
+	}
+
+	uvLocked, uvLockedPresent := os.LookupEnv(UvLocked)
+	if uvLockedPresent && slices.Contains([]string{"1", "true"}, uvLocked) {
+		env = append(env, "UV_LOCKED=1")
+	}
+	uvCompileByteCode, uvCompileByteCodePresent := os.LookupEnv(UvCompileByteCode)
+	if uvCompileByteCodePresent && slices.Contains([]string{"1", "true"}, uvCompileByteCode) {
+		env = append(env, "UV_COMPILE_BYTECODE=1")
+	}
+	uvPreview, uvPreviewPresent := os.LookupEnv(UvPreview)
+	if uvPreviewPresent && slices.Contains([]string{"1", "true"}, uvPreview) {
+		env = append(env, "UV_PREVIEW=1")
 	}
 
 	c.logger.Subprocess("%s\nRunning 'uv %s'", strings.Join(env, "\n"), strings.Join(args, " "))
