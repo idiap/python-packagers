@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/paketo-buildpacks/packit/v2/fs"
@@ -66,16 +67,16 @@ func (c UvRunner) ShouldRun(workingDir string, metadata map[string]interface{}) 
 		h.Write([]byte(installGroups))
 		generatedSha = fmt.Sprintf("%s-%x", generatedSha, h.Sum(nil))
 	}
-	_, uvLockedPresent := os.LookupEnv(UvLocked)
-	if uvLockedPresent {
+	uvLocked, uvLockedPresent := os.LookupEnv(UvLocked)
+	if uvLockedPresent && slices.Contains([]string{"1", "true"}, uvLocked) {
 		generatedSha = fmt.Sprintf("%s-%x", generatedSha, "locked")
 	}
-	_, uvCompileByteCodePresent := os.LookupEnv(UvCompileByteCode)
-	if uvCompileByteCodePresent {
+	uvCompileByteCode, uvCompileByteCodePresent := os.LookupEnv(UvCompileByteCode)
+	if uvCompileByteCodePresent && slices.Contains([]string{"1", "true"}, uvCompileByteCode) {
 		generatedSha = fmt.Sprintf("%s-%x", generatedSha, "compile-byte-code")
 	}
-	_, uvPreviewPresent := os.LookupEnv(UvPreview)
-	if uvPreviewPresent {
+	uvPreview, uvPreviewPresent := os.LookupEnv(UvPreview)
+	if uvPreviewPresent && slices.Contains([]string{"1", "true"}, uvPreview) {
 		generatedSha = fmt.Sprintf("%s-%x", generatedSha, "preview")
 	}
 
@@ -138,16 +139,17 @@ func (c UvRunner) Execute(uvLayerPath string, uvCachePath string, workingDir str
 			args = append(args, fmt.Sprintf("--group=%s", group))
 		}
 	}
-	_, uvLockedPresent := os.LookupEnv(UvLocked)
-	if uvLockedPresent {
+
+	uvLocked, uvLockedPresent := os.LookupEnv(UvLocked)
+	if uvLockedPresent && slices.Contains([]string{"1", "true"}, uvLocked) {
 		env = append(env, "UV_LOCKED=1")
 	}
-	_, uvCompileByteCodePresent := os.LookupEnv(UvCompileByteCode)
-	if uvCompileByteCodePresent {
+	uvCompileByteCode, uvCompileByteCodePresent := os.LookupEnv(UvCompileByteCode)
+	if uvCompileByteCodePresent && slices.Contains([]string{"1", "true"}, uvCompileByteCode) {
 		env = append(env, "UV_COMPILE_BYTECODE=1")
 	}
-	_, uvPreviewPresent := os.LookupEnv(UvPreview)
-	if uvPreviewPresent {
+	uvPreview, uvPreviewPresent := os.LookupEnv(UvPreview)
+	if uvPreviewPresent && slices.Contains([]string{"1", "true"}, uvPreview) {
 		env = append(env, "UV_PREVIEW=1")
 	}
 
