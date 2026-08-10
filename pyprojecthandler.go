@@ -68,16 +68,12 @@ func (p *PyProjectHandler) GetInstaller(projectPath string) (string, error) {
 		return "", err
 	}
 
-	if backend == "" {
-		found, err := fs.Exists(filepath.Join(projectPath, uv.LockfileName))
-		if err != nil {
-			return "", err
-		}
-
-		if found {
-			backend = UvBuild
-		}
-
+	found, err := fs.Exists(filepath.Join(projectPath, uv.LockfileName))
+	if err != nil {
+		return "", err
+	}
+	if found {
+		return uv.UvPlanEntry, nil
 	}
 
 	installer, ok := InstallerMap[backend]
