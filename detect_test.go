@@ -266,6 +266,41 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
+		context("When a uv.lock and pyproject.toml file is present", func() {
+			it.Before(func() {
+				content := []byte(`
+					[build-system]
+					requires = ["uv_build>=0.10.0,<0.11.0"]
+					build-backend = "uv_build"
+				`)
+				Expect(os.RemoveAll(filepath.Join(workingDir, "x.py"))).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, "pyproject.toml"), content, os.ModePerm)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, "uv.lock"), []byte{}, os.ModePerm)).To(Succeed())
+			})
+
+			it("passes detection", func() {
+				result, err := detect(packit.DetectContext{
+					WorkingDir: workingDir,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.Plan).To(Equal(packit.BuildPlan{
+					Provides: []packit.BuildPlanProvision{
+						{
+							Name: uv.UvEnvPlanEntry,
+						},
+					},
+					Requires: []packit.BuildPlanRequirement{
+						{
+							Name: uv.UvPlanEntry,
+							Metadata: build.BuildPlanMetadata{
+								Build: true,
+							},
+						},
+					},
+				}))
+			})
+		})
+
 		context("When uv.lock and a pyproject.toml with a Hatchling backend are present", func() {
 			it.Before(func() {
 				content := []byte(`
