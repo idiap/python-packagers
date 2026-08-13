@@ -376,4 +376,52 @@ func uvTestDefault(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 	})
+
+	context("when building a Hatchling project", func() {
+		var (
+			image     occam.Image
+			container occam.Container
+			name      string
+			source    string
+		)
+
+		it.Before(func() {
+			var err error
+			name, err = occam.RandomName()
+			Expect(err).NotTo(HaveOccurred())
+
+			source, err = occam.Source(filepath.Join("testdata", "uv", "hatchling_app"))
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		it.After(func() {
+			Expect(docker.Container.Remove.Execute(container.ID)).To(Succeed())
+			Expect(docker.Image.Remove.Execute(image.ID)).To(Succeed())
+			Expect(docker.Volume.Remove.Execute(occam.CacheVolumeNames(name))).To(Succeed())
+			Expect(os.RemoveAll(source)).To(Succeed())
+		})
+
+		it("builds an oci image that has the correct behavior", func() {
+			var err error
+			var logs fmt.Stringer
+
+			image, logs, err = pack.WithNoColor().Build.
+				WithPullPolicy("never").
+				WithBuildpacks(
+					settings.Buildpacks.PythonPackageManagersInstall.Online,
+					settings.Buildpacks.PythonPackageManagersRun.Online,
+					settings.Buildpacks.BuildPlan.Online,
+				).
+				Execute(name, source)
+			Expect(err).NotTo(HaveOccurred(), logs.String())
+
+			container, err = docker.Container.Run.
+				WithPublish("8080").
+				WithCommand("python -m hatchling_app").
+				Execute(image.ID)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(container).Should(Serve(ContainSubstring("Hello, world!")).OnPort(8080))
+		})
+	})
 }

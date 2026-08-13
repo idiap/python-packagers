@@ -63,21 +63,17 @@ func (p *PyProjectHandler) GetBuildBackend(projectPath string) (string, error) {
 }
 
 func (p *PyProjectHandler) GetInstaller(projectPath string) (string, error) {
-	backend, err := p.GetBuildBackend(projectPath)
+	found, err := fs.Exists(filepath.Join(projectPath, uv.LockfileName))
 	if err != nil {
 		return "", err
 	}
+	if found {
+		return uv.UvPlanEntry, nil
+	}
 
-	if backend == "" {
-		found, err := fs.Exists(filepath.Join(projectPath, uv.LockfileName))
-		if err != nil {
-			return "", err
-		}
-
-		if found {
-			backend = UvBuild
-		}
-
+	backend, err := p.GetBuildBackend(projectPath)
+	if err != nil {
+		return "", err
 	}
 
 	installer, ok := InstallerMap[backend]
