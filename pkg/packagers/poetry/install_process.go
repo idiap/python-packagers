@@ -50,13 +50,14 @@ func (p PoetryInstallProcess) Execute(workingDir, targetPath, cachePath string) 
 
 	args := append(installCmd, "--only", installOnly)
 
-	env := append(
-		os.Environ(),
+	env := []string{
 		fmt.Sprintf("POETRY_CACHE_DIR=%s", cachePath),
 		fmt.Sprintf("POETRY_VIRTUALENVS_PATH=%s", targetPath),
-	)
+	}
 
 	p.logger.Subprocess("%s\nRunning 'poetry %s'", strings.Join(env, "\n"), strings.Join(args, " "))
+
+	env = append(os.Environ(), env...)
 	err := p.executable.Execute(pexec.Execution{
 		Args:   args,
 		Env:    env,

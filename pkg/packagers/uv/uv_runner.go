@@ -108,7 +108,7 @@ func (c UvRunner) Execute(uvLayerPath string, uvCachePath string, workingDir str
 
 	combinedFindLinks := []string{userFindLinks, findLinks}
 
-	env := append(os.Environ(), fmt.Sprintf("HOME=%s", uvLayerPath))
+	env := []string{fmt.Sprintf("HOME=%s", uvLayerPath)}
 	env = append(env, fmt.Sprintf("VIRTUAL_ENV=%s", venvPath))
 	env = append(env, fmt.Sprintf("UV_PROJECT_ENVIRONMENT=%s", venvPath))
 	env = append(env, fmt.Sprintf("UV_WORKING_DIR=%s", workingDir))
@@ -155,6 +155,7 @@ func (c UvRunner) Execute(uvLayerPath string, uvCachePath string, workingDir str
 
 	c.logger.Subprocess("%s\nRunning 'uv %s'", strings.Join(env, "\n"), strings.Join(args, " "))
 
+	env = append(os.Environ(), env...)
 	err = c.executable.Execute(pexec.Execution{
 		Args: args,
 		Env:  env,
